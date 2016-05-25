@@ -24,6 +24,8 @@ public class CassandraDAO {
 	private CassandraCreate cassandraCreate;
 	private PreparedStatement statement;
 	
+	private BatchStatement batch;
+	
 	public CassandraDAO() throws IOException {
 		super();
 		this.connCassandra = new ConnectCassandra();
@@ -33,6 +35,7 @@ public class CassandraDAO {
 		this.keyspace =  prop.getProperty("cassandra.keyspace");
 		this.cassandraCreate = new CassandraCreate();
 		this.statement = null;
+		this.batch = new BatchStatement();
 	}
 	
 	public void beforeExecuteQuery(){
@@ -42,6 +45,9 @@ public class CassandraDAO {
 	}
 	
 	public void afterExecuteQuery(){
+		if (this.batch.size() > 0) {
+			this.session.execute(batch);
+		}
 		this.connCassandra.close();
 	}
 	
@@ -99,12 +105,12 @@ public class CassandraDAO {
 	 */
 	public void insertData(String idSeq, String seqDna, int line){
 		try{
-//			BoundStatement boundStatement = new BoundStatement(this.statement);
-			BatchStatement batch = new BatchStatement();
-			batch.add(this.statement.bind(idSeq, seqDna, line));
-//			this.session.execute(boundStatement.bind(idSeq, seqDna, line));
-			this.session.execute(batch);
-			
+			this.batch.add(this.statement.bind(idSeq, seqDna, line));
+			if (this.batch.size() >= 50000){
+				this.session.execute(this.batch);
+//				this.batch.clear();
+				this.batch = new BatchStatement();
+			}
 		}catch (Exception e){
 			System.out.println("Erro ao executar a query: :("+e.getMessage());
 		}

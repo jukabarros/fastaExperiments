@@ -108,7 +108,6 @@ public class CassandraDAO {
 			this.batch.add(this.statement.bind(idSeq, seqDna, line));
 			if (this.batch.size() >= 50000){
 				this.session.execute(this.batch);
-//				this.batch.clear();
 				this.batch = new BatchStatement();
 			}
 		}catch (Exception e){

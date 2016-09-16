@@ -53,16 +53,17 @@ public class Application {
 					FastaReaderToCassandra frToCassandra = new FastaReaderToCassandra();
 					frToCassandra.readFastaDirectory(fastaDirectory, numOfRepeat, srsSize);
 				}
-
-				else{
-					CassandraDAO dao = new CassandraDAO();
-					if (extractData.equals("YES")){
-						System.out.println("\n**** Extraindo o conteudo de "+fileNameOutput);
-						dao.findByFileName(fileNameOutput, 0, srsSize);
+				else if (extractData.equals("YES")){
+						CassandraDAO dao = new CassandraDAO();
+						for (int i = 1; i <= numOfRepeat; i++) {
+							System.out.println("\n**** Extraindo o conteudo de "+fileNameOutput);
+							dao.findByFileName(fileNameOutput, i, srsSize);
+							Thread.sleep(60000);
+						}
 					}else{
+						CassandraDAO dao = new CassandraDAO();
 						System.out.println("\n**** Consultando por id de sequencia: "+idSeqDNA);
 						dao.findByID(idSeqDNA);
-					}
 				}
 			}else if (db.equals("MONGODB")){
 				if(insertData.equals("YES")){

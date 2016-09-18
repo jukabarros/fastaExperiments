@@ -47,7 +47,7 @@ public class FastaReaderToCassandra {
 	 * @throws IOException 
 	 * @throws InterruptedException 
 	 */
-	public void readFastaDirectory(String fastaFilePath, int repeat, int srsSize) throws SQLException, IOException, InterruptedException{
+	public void readFastaDirectory(String fastaFilePath, int numOfsample, int srsSize) throws SQLException, IOException, InterruptedException{
 		File directory = new File(fastaFilePath);
 		//get all the files from a directory
 		File[] fList = directory.listFiles();
@@ -55,11 +55,11 @@ public class FastaReaderToCassandra {
 		Arrays.sort(fList);
 		// Criando o arquivo txt referente ao tempo de insercao no bd
 		this.createTxtFile("INSERT", srsSize);
+		this.prepareHeaderTxtFile(fList);
 		
-		for (int i = 1; i <= repeat; i++) {
+		for (int i = 1; i <= numOfsample; i++) {
 			System.out.println("******** Amostra: "+i);
 			CassandraCreate.main(null);
-			this.prepareHeaderTxtFile(fList);
 			for (File file : fList){
 				if (file.isFile()){
 					if (file.getName().endsWith(".fasta") || file.getName().endsWith(".fa")){
@@ -83,13 +83,16 @@ public class FastaReaderToCassandra {
 				}
 			}
 			this.bwCassandra.write("\n");
+			System.out.println("**** Total de linhas inseridas no Banco: "+this.allLines/2);
+			Thread.sleep(60000);
+			this.allLines = 0;
+			this.dao = new CassandraDAO();
 		}
 		
 		this.bwCassandra.close();
 		this.fwCassandra = null;
 		this.fileTxtCassandra = null;
-		System.out.println("**** Total de linhas inseridas no Banco: "+this.allLines/2);
-		Thread.sleep(60000);
+		
 	}
 	
 	/**
@@ -98,11 +101,11 @@ public class FastaReaderToCassandra {
 	 * @throws IOException
 	 */
 	private void prepareHeaderTxtFile(File[] fList) throws IOException {
-		this.bwCassandra.write("****** INSERÇÃO CASSANDRA ******\n");
+		this.bwCassandra.write("****** INSERÇÃO CASSANDRA (segundos) ******\n");
 		for (File file : fList){
 			if (file.isFile()){
 				if (file.getName().endsWith(".fasta") || file.getName().endsWith(".fa")){
-					this.bwCassandra.write(file.getName()+"\t");
+					this.bwCassandra.write(file.getName() + '\t');
 				}
 			}
 		}
@@ -273,7 +276,7 @@ public class FastaReaderToCassandra {
 		System.out.print("\n******** Tempo de execução: " 
 				+ formatter.format(totalTime / 1000d) + " segundos \n");
 		
-		String totalTimeSTR = formatter.format(totalTime / 1000d)+ " segundos";
+		String totalTimeSTR = formatter.format(totalTime / 1000d);
 		return totalTimeSTR;
 	}
 	

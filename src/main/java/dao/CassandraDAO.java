@@ -146,7 +146,7 @@ public class CassandraDAO {
 	 * @return
 	 * @throws IOException 
 	 */
-	public void findByFileName(String fileName, int repeat, int srsSize) throws IOException{
+	public void findByFileName(String fileName, int numOfSample, int srsSize) throws IOException{
 		this.beforeExecuteQuery();
 		this.query = "SELECT * FROM fasta_info WHERE file_name = ?;";
 		this.statement = this.session.prepare(query);
@@ -160,7 +160,7 @@ public class CassandraDAO {
 			}
 			String tableName = fileName.replace(".", "___");
 			int numOfLines = row.getInt("num_lines");
-			this.extractFastaContent(tableName, numOfLines, repeat, srsSize);
+			this.extractFastaContent(tableName, numOfLines, numOfSample, srsSize);
 		}
 		this.afterExecuteQuery();
 	}
@@ -173,20 +173,17 @@ public class CassandraDAO {
 	 * @param srsSize tamanho da SRS
 	 * @throws IOException
 	 */
-	private void extractFastaContent(String table, int numOfLines, int repeat, int srsSize) throws IOException{
+	private void extractFastaContent(String table, int numOfLines, int numOfSample, int srsSize) throws IOException{
 		OutputFasta outputFasta = new OutputFasta();
 		String fileName = table.replace("___", ".");
 		System.out.println("** Criando o arquivo "+fileName);
-		outputFasta.createFastaFile(repeat+fileName);
+		outputFasta.createFastaFile(numOfSample+fileName);
 		if (numOfLines == 0){
 			System.out.println("*** Esse arquivo está vazio :(");
 		}else {
 
 			this.query = "SELECT * FROM "+table;
 			ResultSet results = this.session.execute(this.query);
-//			SimpleStatement simpleStatement = new SimpleStatement("SELECT * FROM "+table);
-//			simpleStatement.setFetchSize(500000);
-//			ResultSet results = this.session.execute(this.query);
 			int line = 0;
 			for (Row row : results) {
 				outputFasta.writeFastaFile(row.getString("id_seq"), row.getString("seq_dna"), srsSize);
@@ -218,7 +215,7 @@ public class CassandraDAO {
 			BoundStatement boundStatement = new BoundStatement(statement);
 			ResultSet results = this.session.execute(boundStatement.bind(idSeq));
 			for (Row row : results) {
-				System.out.println("* ID de Sequência encontrado no arquivo "+row0.getString("file_name"));
+				System.out.println("ID de Sequência encontrado no arquivo "+row0.getString("file_name"));
 				System.out.println("ID de Sequência: "+row.getString("id_seq"));
 				System.out.println("Sequência DNA: "+row.getString("seq_dna"));
 				System.out.println("Linha: "+row.getInt("line"));

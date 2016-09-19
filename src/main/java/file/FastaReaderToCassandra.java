@@ -55,7 +55,7 @@ public class FastaReaderToCassandra {
 		Arrays.sort(fList);
 		// Criando o arquivo txt referente ao tempo de insercao no bd
 		this.createTxtFile("INSERT", srsSize);
-		this.prepareHeaderTxtFile(fList);
+		this.prepareHeaderTxtFile(fList, "INSERÇÃO");
 		
 		for (int i = 1; i <= numOfsample; i++) {
 			System.out.println("******** Amostra: "+i);
@@ -95,13 +95,34 @@ public class FastaReaderToCassandra {
 		
 	}
 	
+	public void extractData(String fastaFileOutput, int numOfsamples, int srsSize) throws IOException, InterruptedException {
+		this.createTxtFile("EXTRACT", srsSize);
+		this.bwCassandra.write("****** EXTRAÇÃO CASSANDRA (segundos) ******\n");
+		this.bwCassandra.write(fastaFileOutput + '\n');
+		for (int i = 1; i <= numOfsamples; i++) {
+			System.out.println("\n*** Extraindo o conteudo de "+fastaFileOutput);
+			System.out.println("*** Amostra: "+i);
+			long startTime = System.currentTimeMillis();
+			this.dao.findByFileName(fastaFileOutput, i, srsSize);
+			long endTime = System.currentTimeMillis();
+
+			String timeExecutionSTR = this.calcTimeExecution(startTime, endTime);
+			this.bwCassandra.write(timeExecutionSTR + '\n');
+			Thread.sleep(6000);
+		}
+		
+		this.bwCassandra.close();
+		this.fwCassandra = null;
+		this.fileTxtCassandra = null;
+	}
+	
 	/**
 	 * Cria o cabecalho do arquivo de acordo com o diretorio dos arquivos fasta
 	 * @param fList
 	 * @throws IOException
 	 */
-	private void prepareHeaderTxtFile(File[] fList) throws IOException {
-		this.bwCassandra.write("****** INSERÇÃO CASSANDRA (segundos) ******\n");
+	private void prepareHeaderTxtFile(File[] fList, String experiment) throws IOException {
+		this.bwCassandra.write("****** "+experiment+" CASSANDRA (segundos) ******\n");
 		for (File file : fList){
 			if (file.isFile()){
 				if (file.getName().endsWith(".fasta") || file.getName().endsWith(".fa")){
@@ -273,7 +294,7 @@ public class FastaReaderToCassandra {
 	private String calcTimeExecution (long start, long end){
 		long totalTime = end - start;
 		NumberFormat formatter = new DecimalFormat("#0.00");
-		System.out.print("\n******** Tempo de execução: " 
+		System.out.print("* Tempo de execução: " 
 				+ formatter.format(totalTime / 1000d) + " segundos \n");
 		
 		String totalTimeSTR = formatter.format(totalTime / 1000d);

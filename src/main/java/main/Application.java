@@ -36,7 +36,7 @@ public class Application {
 			int srsSize = Integer.parseInt(args[1]);
 
 			String db = prop.getProperty("database").toUpperCase();
-			System.out.println("* Banco de Dados escolhido: "+prop.getProperty("database").toUpperCase());
+			System.out.println("* Banco de Dados escolhido: "+db);
 			System.out.println("* Número de Amostras: "+numOfSamples);
 			System.out.println("* Tamanho da SRS: "+srsSize);
 
@@ -47,17 +47,12 @@ public class Application {
 			long startTime = System.currentTimeMillis();
 
 			if(db.equals("CASSANDRA")){
+				FastaReaderToCassandra frToCassandra = new FastaReaderToCassandra();
 				if(insertData.equals("YES")){
-					FastaReaderToCassandra frToCassandra = new FastaReaderToCassandra();
 					frToCassandra.readFastaDirectory(fastaDirectory, numOfSamples, srsSize);
 				}
 				else if (extractData.equals("YES")){
-					CassandraDAO dao = new CassandraDAO();
-					for (int i = 1; i <= numOfSamples; i++) {
-						System.out.println("\n**** Extraindo o conteudo de "+fileNameOutput);
-						dao.findByFileName(fileNameOutput, i, srsSize);
-						Thread.sleep(60000);
-					}
+					frToCassandra.extractData(fileNameOutput, numOfSamples, srsSize);
 				}else{
 					CassandraDAO dao = new CassandraDAO();
 					System.out.println("\n**** Consultando por id de sequencia: "+idSeqDNA);
@@ -115,8 +110,8 @@ public class Application {
 	public long calcTimeExecution (long start, long end){
 		long totalTime = end - start;
 		NumberFormat formatter = new DecimalFormat("#0.00");
-		System.out.print("\n******** Tempo total de execução: " 
-				+ formatter.format(totalTime / 1000d) + " segundos \n");
+		System.out.print("\n****** Tempo TOTAL de execução: " 
+				+ formatter.format(totalTime / 1000d) + " segundos ******\n");
 
 		return totalTime;
 	}

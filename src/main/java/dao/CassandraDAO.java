@@ -193,7 +193,7 @@ public class CassandraDAO {
 				line++;
 			}
 		}
-		System.out.println("**** Quantidade de linhas: "+numOfLines);
+		System.out.println("* Quantidade de linhas: "+numOfLines);
 		outputFasta.closeFastaFile();
 	}
 	

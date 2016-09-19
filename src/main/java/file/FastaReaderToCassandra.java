@@ -108,7 +108,7 @@ public class FastaReaderToCassandra {
 
 			String timeExecutionSTR = this.calcTimeExecution(startTime, endTime);
 			this.bwCassandra.write(timeExecutionSTR + '\n');
-			Thread.sleep(6000);
+			Thread.sleep(60000);
 		}
 		
 		this.bwCassandra.close();

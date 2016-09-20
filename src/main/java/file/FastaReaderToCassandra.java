@@ -55,16 +55,16 @@ public class FastaReaderToCassandra {
 		Arrays.sort(fList);
 		// Criando o arquivo txt referente ao tempo de insercao no bd
 		this.createTxtFile("INSERT", srsSize);
-		this.prepareHeaderTxtFile(fList, "INSERÇÃO");
+		this.prepareHeaderInsertTxtFile(fList, "INSERÇÃO");
 		
 		for (int i = 1; i <= numOfsample; i++) {
-			System.out.println("******** Amostra: "+i);
+			System.out.println("\n******** Amostra: "+i);
 			CassandraCreate.main(null);
 			for (File file : fList){
 				if (file.isFile()){
 					if (file.getName().endsWith(".fasta") || file.getName().endsWith(".fa")){
 						double sizeInMb = file.length() / (1024 * 1024);
-						System.out.println("* Indexando o arquivo "+file.getName());
+						System.out.println("\n* Indexando o arquivo "+file.getName());
 						this.dao.insertFastaInfo(file.getName(), sizeInMb, "Inserir comentario");
 						System.out.println("* Inserindo o conteudo do arquivo no BD");
 						this.lineNumber = 0;
@@ -83,7 +83,7 @@ public class FastaReaderToCassandra {
 				}
 			}
 			this.bwCassandra.write("\n");
-			System.out.println("**** Total de linhas inseridas no Banco: "+this.allLines/2);
+			System.out.println("\n**** Total de linhas inseridas no Banco: "+this.allLines/2);
 			Thread.sleep(60000);
 			this.allLines = 0;
 			this.dao = new CassandraDAO();
@@ -95,19 +95,42 @@ public class FastaReaderToCassandra {
 		
 	}
 	
-	public void extractData(String fastaFileOutput, int numOfsamples, int srsSize) throws IOException, InterruptedException {
+	public void extractData(int numOfsamples, int srsSize) throws IOException, InterruptedException {
+		List<String> allFastaFiles = this.dao.getAllFastaFile();
 		this.createTxtFile("EXTRACT", srsSize);
-		this.bwCassandra.write("****** EXTRAÇÃO CASSANDRA (segundos) ******\n");
-		this.bwCassandra.write(fastaFileOutput + '\n');
+		this.prepareHeaderExtractTxtFile(allFastaFiles, "EXTRAÇÃO");
+		
 		for (int i = 1; i <= numOfsamples; i++) {
-			System.out.println("\n*** Extraindo o conteudo de "+fastaFileOutput);
 			System.out.println("*** Amostra: "+i);
-			long startTime = System.currentTimeMillis();
-			this.dao.findByFileName(fastaFileOutput, i, srsSize);
-			long endTime = System.currentTimeMillis();
 
+			for (int j = 0; j < allFastaFiles.size(); j++) {
+				System.out.println("\n*** Extraindo o conteudo de "+allFastaFiles.get(j));
+				long startTime = System.currentTimeMillis();
+				this.dao.findByFileName(allFastaFiles.get(j), i, srsSize);
+				long endTime = System.currentTimeMillis();
+
+				String timeExecutionSTR = this.calcTimeExecution(startTime, endTime);
+				this.bwCassandra.write(timeExecutionSTR + '\t');
+			}
+			this.bwCassandra.write('\n');
+			Thread.sleep(600);
+		}
+		
+		this.bwCassandra.close();
+		this.fwCassandra = null;
+		this.fileTxtCassandra = null;
+	}
+	
+	public void searchSeqsByID() throws IOException, InterruptedException {
+		List<String> allIDs = this.addAllIdSeqs();
+		this.createTxtFile("SEARCH", 0);
+		this.bwCassandra.write("****** CONSULTA CASSANDRA (segundos) ******\n");
+		for (int i = 0; i < allIDs.size(); i++) {
+			long startTime = System.currentTimeMillis();
+			this.dao.findByID(allIDs.get(i));
+			long endTime = System.currentTimeMillis();
 			String timeExecutionSTR = this.calcTimeExecution(startTime, endTime);
-			this.bwCassandra.write(timeExecutionSTR + '\n');
+			this.bwCassandra.write(timeExecutionSTR + '\t' + allIDs.get(i)+'\n');
 			Thread.sleep(60000);
 		}
 		
@@ -118,10 +141,11 @@ public class FastaReaderToCassandra {
 	
 	/**
 	 * Cria o cabecalho do arquivo de acordo com o diretorio dos arquivos fasta
+	 * Experimento INSERCAO
 	 * @param fList
 	 * @throws IOException
 	 */
-	private void prepareHeaderTxtFile(File[] fList, String experiment) throws IOException {
+	private void prepareHeaderInsertTxtFile(File[] fList, String experiment) throws IOException {
 		this.bwCassandra.write("****** "+experiment+" CASSANDRA (segundos) ******\n");
 		for (File file : fList){
 			if (file.isFile()){
@@ -129,6 +153,21 @@ public class FastaReaderToCassandra {
 					this.bwCassandra.write(file.getName() + '\t');
 				}
 			}
+		}
+		this.bwCassandra.write("\n");
+	}
+	
+	/**
+	 * Cria o cabecalho do arquivo de acordo com o diretorio dos arquivos fasta
+	 * Experimento INSERCAO
+	 * @param fList
+	 * @throws IOException
+	 */
+	private void prepareHeaderExtractTxtFile(List<String> allFastaFiles, String experiment) throws IOException {
+		this.bwCassandra.write("****** "+experiment+" CASSANDRA (segundos) ******\n");
+		for (int i = 0; i < allFastaFiles.size(); i++) {
+			this.bwCassandra.write(allFastaFiles.get(i) + '\t');
+			
 		}
 		this.bwCassandra.write("\n");
 	}
@@ -164,7 +203,7 @@ public class FastaReaderToCassandra {
 					this.insertFastaContent(file.getAbsolutePath(), file.getName(), srsSize);
 					
 					List<String> idSequences = new ArrayList<String>();
-					idSequences = this.addAllIdSeqs(idSequences);
+					idSequences = this.addAllIdSeqs();
 					Thread.sleep(10000); // Aguarda 10 segundos para realizar consulta
 					System.out.println("\n\n** Iniciando as Consultas");
 					// 5 -> Numero de amostra para o experimento
@@ -198,8 +237,10 @@ public class FastaReaderToCassandra {
 	 * @param allIDSeq
 	 * @return
 	 */
-	private List<String> addAllIdSeqs(List<String> allIDSeq){
-
+	private List<String> addAllIdSeqs(){
+		
+		List<String> allIDSeq = new ArrayList<>();
+		
 		allIDSeq.add(">385_828_1910_F3");
 		allIDSeq.add(">375_1783_953_F3");
 		allIDSeq.add(">932_31_598_F3");

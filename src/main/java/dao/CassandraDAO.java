@@ -1,6 +1,8 @@
 package dao;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import com.datastax.driver.core.BatchStatement;
@@ -134,6 +136,30 @@ public class CassandraDAO {
 		}catch (Exception e){
 			System.out.println("Erro ao executar a query: :("+e.getMessage());
 		}
+	}
+	
+	/**
+	 * Recupera todos os arquivos fastas que foram inseridos e indexados na tabela fasta_info
+	 * @return lista com o nome dos arquivos fasta
+	 * @throws IOException
+	 * 
+	 */
+	public List<String> getAllFastaFile() throws IOException{
+		this.beforeExecuteQuery();
+		this.query = "SELECT * FROM fasta_info;";
+		this.statement = this.session.prepare(query);
+		ResultSet results = this.session.execute(this.query);
+		List<String> allFastaFiles = new ArrayList<String>();
+		for (Row row : results) {
+			if (row.isNull(0)){
+				System.out.println("** Conteudo nao encontrado no banco de dados");
+				break;
+			}
+			allFastaFiles.add(row.getString("file_name"));
+		}
+		this.afterExecuteQuery();
+		
+		return allFastaFiles;
 	}
 	
 	/**

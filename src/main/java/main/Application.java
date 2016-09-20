@@ -9,7 +9,6 @@ import java.util.Properties;
 import config.ReadProperties;
 import create.MongoDBCreate;
 import create.MySQLCreate;
-import dao.CassandraDAO;
 import dao.MongoDBDAO;
 import dao.MySQLDAO;
 import file.FastaReaderToCassandra;
@@ -42,7 +41,7 @@ public class Application {
 
 			String insertData = prop.getProperty("insert.data").toUpperCase();
 
-			String idSeqDNA = prop.getProperty("id.seqDNA");
+			String idSeqDNA = "";
 			String extractData = prop.getProperty("extract.data").toUpperCase();
 			long startTime = System.currentTimeMillis();
 
@@ -52,11 +51,9 @@ public class Application {
 					frToCassandra.readFastaDirectory(fastaDirectory, numOfSamples, srsSize);
 				}
 				else if (extractData.equals("YES")){
-					frToCassandra.extractData(fileNameOutput, numOfSamples, srsSize);
+					frToCassandra.extractData(numOfSamples, srsSize);
 				}else{
-					CassandraDAO dao = new CassandraDAO();
-					System.out.println("\n**** Consultando por id de sequencia: "+idSeqDNA);
-					dao.findByID(idSeqDNA);
+					frToCassandra.searchSeqsByID();
 				}
 			}else if (db.equals("MONGODB")){
 				if(insertData.equals("YES")){

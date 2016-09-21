@@ -25,12 +25,12 @@ public class Application {
 	public static void main(String[] args) throws IOException, SQLException, InterruptedException {
 		Application app = new Application();
 		Properties prop = ReadProperties.getProp();
-		String fileNameOutput = prop.getProperty("file.name.output");
 		int numOfSamples = Integer.parseInt(prop.getProperty("num.sample"));
 		int numOfArgs = args.length;
 		if (numOfArgs != 2) {
 			System.out.println("*** Número de parametros inválidos: "+numOfArgs+" (2)");
 		} else {
+			
 			String fastaDirectory = args[0];
 			int srsSize = Integer.parseInt(args[1]);
 
@@ -41,18 +41,26 @@ public class Application {
 
 			String insertData = prop.getProperty("insert.data").toUpperCase();
 
+			String fileNameOutput = "";
 			String idSeqDNA = "";
+
 			String extractData = prop.getProperty("extract.data").toUpperCase();
+			String searchbyID = prop.getProperty("search.byid").toUpperCase();
+			
 			long startTime = System.currentTimeMillis();
 
 			if(db.equals("CASSANDRA")){
 				FastaReaderToCassandra frToCassandra = new FastaReaderToCassandra();
 				if(insertData.equals("YES")){
+					System.out.println("****** INSERÇÃO CASSANDRA ******");
 					frToCassandra.readFastaDirectory(fastaDirectory, numOfSamples, srsSize);
 				}
-				else if (extractData.equals("YES")){
+				if (extractData.equals("YES")){
+					System.out.println("****** EXTRAÇÃO CASSANDRA ******");
 					frToCassandra.extractData(numOfSamples, srsSize);
-				}else{
+				}
+				if (searchbyID.equals("YES")){
+					System.out.println("****** CONSULTA CASSANDRA ******");
 					frToCassandra.searchSeqsByID();
 				}
 			}else if (db.equals("MONGODB")){

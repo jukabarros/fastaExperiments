@@ -113,7 +113,7 @@ public class FastaReaderToCassandra {
 				this.bwCassandra.write(timeExecutionSTR + '\t');
 			}
 			this.bwCassandra.write('\n');
-			Thread.sleep(600);
+			Thread.sleep(60000);
 		}
 		
 		this.bwCassandra.close();
@@ -126,6 +126,7 @@ public class FastaReaderToCassandra {
 		this.createTxtFile("SEARCH", 0);
 		this.bwCassandra.write("****** CONSULTA CASSANDRA (segundos) ******\n");
 		for (int i = 0; i < allIDs.size(); i++) {
+			System.out.println("* Amostra ("+i+")");
 			long startTime = System.currentTimeMillis();
 			this.dao.findByID(allIDs.get(i));
 			long endTime = System.currentTimeMillis();

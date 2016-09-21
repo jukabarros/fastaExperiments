@@ -51,12 +51,10 @@ public class MongoDBCreate {
 			System.out.println("Excluindo o Banco de Dados");
 			ConnectMongoDB mongoCon = new ConnectMongoDB();
 			mongoCon.dropDatabase();
-			System.out.println("OK");
 			
 			System.out.println("Criando o Banco de Dados");
 			MongoDBCreate mongodbCreate = new MongoDBCreate();
 			
-			System.out.println("OK");
 			Set<String> allCollections = mongodbCreate.listAllColection();
 			String[] listAllCollections = allCollections.toArray(new String [allCollections.size()]);
 			for (int i = 0; i < listAllCollections.length; i++) {

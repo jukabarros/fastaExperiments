@@ -1,7 +1,8 @@
 package dao;
 
 import java.io.IOException;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
@@ -25,7 +26,7 @@ public class MongoDBDAO {
 	 * cria uma nova
 	 */
 	public void getCollection(String collection) throws IOException{
-		System.out.println("** Collection "+collection);
+		System.out.println("* Collection "+collection);
 		this.dbCollection = this.mongoDBCreate.getCollection(collection);
 	}
 	
@@ -92,6 +93,25 @@ public class MongoDBDAO {
 	}
 	
 	/**
+	 * Retorna o numero de linhas de uma colecao especifica, a fim de verificar
+	 * se vai ser necessario realizar consultar por paginacao
+	 * @param collection
+	 * @throws IOException
+	 */
+	public List<String> getAllFastaFile() throws IOException{
+		List<String> allFastaFile = new ArrayList<String>();
+		this.dbCollection = this.mongoDBCreate.getCollection("fasta_info");
+		BasicDBObject searchQuery = new BasicDBObject();
+		DBCursor cursor = this.dbCollection.find(searchQuery);
+		while (cursor.hasNext()) {
+		    BasicDBObject obj = (BasicDBObject) cursor.next();
+			String fileFileName = obj.getString("file_name");
+			allFastaFile.add(fileFileName);
+		}
+		return allFastaFile;
+	}
+	
+	/**
 	 * Retorna o conteudo de uma collection, ou seja,
 	 * de um arquivo fasta completo e manda para a lista de Fasta_Info
 	 * onde pode ser gerado o arquivo fasta
@@ -109,7 +129,7 @@ public class MongoDBDAO {
 				BasicDBObject obj = (BasicDBObject) cursorFind.next();
 				outputFasta.writeFastaFile(obj.getString("idSeq"), obj.getString("seqDna"), srsSize);
 			}
-			System.out.println("\n**** Quantidade de registros: "+numOfLines);
+			System.out.println("* Quantidade de registros: "+numOfLines);
 			outputFasta.closeFastaFile();
 		} else {
 			System.out.println("*** Conteúdo do arquivo não encontrado no Banco de dados :(");
@@ -125,14 +145,13 @@ public class MongoDBDAO {
 	public void findByID(String idSeq) throws IOException{
 		BasicDBObject searchQuery = new BasicDBObject();
 		searchQuery.put("idSeq", idSeq);
-		Set<String> allCollections = this.mongoDBCreate.listAllColection();
-		String[] listAllCollections = allCollections.toArray(new String [allCollections.size()]);
+		List<String> allFastaCollections = this.getAllFastaFile();
 		boolean idSeqFound = false;
-		for (int i = 0; i < listAllCollections.length; i++) {
-			this.dbCollection = this.mongoDBCreate.getCollection(listAllCollections[i]);
+		for (int i = 0; i < allFastaCollections.size(); i++) {
+			this.dbCollection = this.mongoDBCreate.getCollection(allFastaCollections.get(i));
 			DBCursor cursor = this.dbCollection.find(searchQuery);
 			while (cursor.hasNext()) {
-				System.out.println("** ID encontrado na coleção "+listAllCollections[i]);
+				System.out.println("** ID encontrado na coleção "+allFastaCollections.get(i));
 				BasicDBObject obj = (BasicDBObject) cursor.next();
 				System.out.println("ID: "+obj.getString("idSeq"));
 				System.out.println("Sequência: "+obj.getString("seqDna"));
@@ -140,8 +159,8 @@ public class MongoDBDAO {
 				idSeqFound = true;
 			}
 		}
-		if (idSeqFound){
-			System.out.println("*** ID "+idSeq+" não encontrado no Banco de dados :(");
+		if (!idSeqFound){
+			System.out.println("* "+idSeq+" não encontrado no Banco de dados :(");
 		}
 	}
 	

@@ -95,6 +95,13 @@ public class FastaReaderToCassandra {
 		
 	}
 	
+	/**
+	 * Extrai o conteudo do arquivo do BD e monta o arquivo .fa
+	 * @param numOfsamples numero de amostra
+	 * @param srsSize tamanho da SRS
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
 	public void extractData(int numOfsamples, int srsSize) throws IOException, InterruptedException {
 		List<String> allFastaFiles = this.dao.getAllFastaFile();
 		this.createTxtFile("EXTRACT", srsSize);
@@ -111,6 +118,7 @@ public class FastaReaderToCassandra {
 
 				String timeExecutionSTR = this.calcTimeExecution(startTime, endTime);
 				this.bwCassandra.write(timeExecutionSTR + '\t');
+				Thread.sleep(30000);
 			}
 			this.bwCassandra.write('\n');
 			Thread.sleep(60000);
@@ -121,12 +129,17 @@ public class FastaReaderToCassandra {
 		this.fileTxtCassandra = null;
 	}
 	
-	public void searchSeqsByID() throws IOException, InterruptedException {
+	/**
+	 * Consulta pelo id de sequencia, no total são 30 ids consultados.
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
+	public void findSeqByID() throws IOException, InterruptedException {
 		List<String> allIDs = this.addAllIdSeqs();
 		this.createTxtFile("SEARCH", 0);
 		this.bwCassandra.write("****** CONSULTA CASSANDRA (segundos) ******\n");
 		for (int i = 0; i < allIDs.size(); i++) {
-			System.out.println("* Amostra ("+i+")");
+			System.out.println("* Amostra ("+(i+1)+")");
 			long startTime = System.currentTimeMillis();
 			this.dao.findByID(allIDs.get(i));
 			long endTime = System.currentTimeMillis();
@@ -159,8 +172,8 @@ public class FastaReaderToCassandra {
 	}
 	
 	/**
-	 * Cria o cabecalho do arquivo de acordo com o diretorio dos arquivos fasta
-	 * Experimento INSERCAO
+	 * Cria o cabecalho do arquivo de acordo com a tabela fasta_info
+	 * Experimento Extracao
 	 * @param fList
 	 * @throws IOException
 	 */

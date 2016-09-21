@@ -7,9 +7,7 @@ import java.text.NumberFormat;
 import java.util.Properties;
 
 import config.ReadProperties;
-import create.MongoDBCreate;
 import create.MySQLCreate;
-import dao.MongoDBDAO;
 import dao.MySQLDAO;
 import file.FastaReaderToCassandra;
 import file.FastaReaderToMongoDB;
@@ -61,26 +59,21 @@ public class Application {
 				}
 				if (searchbyID.equals("YES")){
 					System.out.println("****** CONSULTA CASSANDRA ******");
-					frToCassandra.searchSeqsByID();
+					frToCassandra.findSeqByID();
 				}
 			}else if (db.equals("MONGODB")){
+				FastaReaderToMongoDB frToMongodb = new FastaReaderToMongoDB();
 				if(insertData.equals("YES")){
-					for (int i = 1; i <= numOfSamples; i++) {
-						MongoDBCreate.main(null);
-						System.out.println("******** Repetição: "+i);
-						FastaReaderToMongoDB frToMongo = new FastaReaderToMongoDB();
-						frToMongo.readFastaDirectory(fastaDirectory, i, srsSize);
-					}
-				}else{
-					MongoDBDAO dao = new MongoDBDAO();
-					if (extractData.equals("YES")){
-						System.out.println("\n**** Extraindo o conteudo de "+fileNameOutput);
-						dao.findByCollection(fileNameOutput, 0, srsSize);
-					}else{
-						System.out.println("\n**** Consultando por id de sequencia: "+idSeqDNA);
-						dao.findByID(idSeqDNA);
-					}
-
+					System.out.println("****** INSERÇÃO MONGODB ******");
+					frToMongodb.readFastaDirectory(fastaDirectory, numOfSamples, srsSize);
+				}
+				if (extractData.equals("YES")){
+					System.out.println("****** EXTRAÇÃO MONGODB ******");
+					frToMongodb.extractData(numOfSamples, srsSize);
+				}
+				if (searchbyID.equals("YES")){
+					System.out.println("****** CONSULTA MONGODB ******");
+					frToMongodb.findSeqByID();
 				}
 			}else if (db.equals("MYSQL")){
 				if(insertData.equals("YES")){
@@ -115,7 +108,7 @@ public class Application {
 	public long calcTimeExecution (long start, long end){
 		long totalTime = end - start;
 		NumberFormat formatter = new DecimalFormat("#0.00");
-		System.out.print("\n****** Tempo TOTAL de execução: " 
+		System.out.print("\n*** Tempo TOTAL de execução: " 
 				+ formatter.format(totalTime / 1000d) + " segundos ******\n");
 
 		return totalTime;

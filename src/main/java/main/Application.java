@@ -21,7 +21,6 @@ public class Application {
 	public static void main(String[] args) throws IOException, SQLException, InterruptedException {
 		Application app = new Application();
 		Properties prop = ReadProperties.getProp();
-		int numOfSamples = Integer.parseInt(prop.getProperty("num.sample"));
 		int numOfArgs = args.length;
 		if (numOfArgs != 2) {
 			System.out.println("*** Número de parametros inválidos: "+numOfArgs+" (2)");
@@ -31,6 +30,8 @@ public class Application {
 			int srsSize = Integer.parseInt(args[1]);
 
 			String db = prop.getProperty("database").toUpperCase();
+			int numOfSamples = Integer.parseInt(prop.getProperty("num.sample"));
+			
 			System.out.println("* Banco de Dados escolhido: "+db);
 			System.out.println("* Número de Amostras: "+numOfSamples);
 			System.out.println("* Tamanho da SRS: "+srsSize);

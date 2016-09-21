@@ -13,6 +13,8 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import create.MySQLCreate;
 import dao.MySQLDAO;
 
 public class FastaReaderToMySQL {
@@ -24,14 +26,10 @@ public class FastaReaderToMySQL {
 	
 	private MySQLDAO dao;
 	
-	/* Sao usadas para criar o arquivo txt indicando
-	 * o tempo de insercao de cada arquivo
-	 */
 	private File fileTxtMySQL;
 	private FileWriter fwMySQL;
 	private BufferedWriter bwMySQL;
 	
-	private List<String> allFilesNames;
 	
 	public FastaReaderToMySQL() throws IOException {
 		super();
@@ -42,61 +40,6 @@ public class FastaReaderToMySQL {
 		this.fileTxtMySQL = null;
 		this.fwMySQL = null;
 		this.bwMySQL = null;
-		this.allFilesNames = new ArrayList<String>();
-	}
-	
-	/**
-	 * Realiza todos os experimento de uma so vez, na seguinte ordem:
-	 * Insere todos os arquivos fastas, consulta por 5 ids diferentes e extrai todos os arquivos
-	 * Esse procedimento pode ser repetido de acordo com a propriedade 'num.repeat'
-	 * @param fastaFilePath
-	 * @param repeat
-	 * @param srsSize
-	 * @throws SQLException
-	 * @throws IOException
-	 */
-	public void doAllExperiment(String fastaFilePath, int repeat, int srsSize) throws SQLException, IOException{
-		System.out.println("\n\n** Iniciando a Inserção dos arquivos");
-		this.readFastaByDirectory(fastaFilePath, repeat, srsSize);
-		
-		//cabra4, cabra6 cabra5 cabra6 cabra7
-		String[] idSequences = {">557_2036_1480_F3",">746_81_294_F3", ">560_29_216_F3", ">929_2036_1706_F3", ">932_36_394_F3"};
-		System.out.println("\n\n** Iniciando as Consultas dos arquivos");
-		
-		this.createTxtFile("SEARCH", repeat, srsSize);
-		
-		//this.createConsultTimeTxt(repeat, srsSize);
-		
-		this.bwMySQL.write("****** CONSULTA ******\n");
-		for (int i = 0; i < idSequences.length; i++) {
-			long startTime = System.currentTimeMillis();
-			this.dao.findByID(idSequences[i]);
-			long endTime = System.currentTimeMillis();
-
-			String timeExecutionSTR = this.calcTimeExecution(startTime, endTime);
-			this.bwMySQL.write(idSequences[i] + '\t' + "tempo: "+'\t'+timeExecutionSTR+'\n');
-		}
-		this.bwMySQL.close();
-		this.fwMySQL = null;
-		this.fileTxtMySQL = null;
-		
-		System.out.println("\n\n** Iniciando a Extração dos arquivos");
-		this.createTxtFile("EXTRACT", repeat, srsSize);
-//		this.createExtractTimeTxt(repeat,srsSize);
-		this.bwMySQL.write("****** EXTRAÇÃO ******\n");
-		for (int i = 0; i < this.allFilesNames.size(); i++) {
-			long startTime = System.currentTimeMillis();
-			this.dao.findByFilename(this.allFilesNames.get(i), repeat, srsSize);
-			long endTime = System.currentTimeMillis();
-
-			String timeExecutionSTR = this.calcTimeExecution(startTime, endTime);
-			this.bwMySQL.write(this.allFilesNames.get(i) + '\t' + "tempo: "+'\t'+timeExecutionSTR+'\n');
-		}
-		this.bwMySQL.close();
-		this.fwMySQL = null;
-		this.fileTxtMySQL = null;
-		
-		System.out.println("\n\n\n********** FIM ************");
 	}
 	
 	/**
@@ -105,56 +48,149 @@ public class FastaReaderToMySQL {
 	 * @param fastaDirectory
 	 * @throws SQLException 
 	 * @throws IOException 
+	 * @throws InterruptedException 
 	 */
-	public void readFastaByDirectory(String fastaFilePath, int repeat, int srsSize) throws SQLException, IOException{
+	public void readFastaDirectory(String fastaFilePath, int numOfsample, int srsSize) throws SQLException, IOException, InterruptedException{
 		File directory = new File(fastaFilePath);
 		//get all the files from a directory
 		File[] fList = directory.listFiles();
 		// Ordernando a lista por ordem alfabetica
 		Arrays.sort(fList);
 		// Criando o arquivo txt referente ao tempo de insercao no bd
-//		this.createInsertTimeTxt(repeat,srsSize);
-		this.createTxtFile("INSERT", repeat, srsSize);
-		this.bwMySQL.write("****** INSERÇÃO ******\n");
-		for (File file : fList){
-			if (file.isFile()){
-				System.out.println("** Lendo o arquivo: "+file.getName());
-				if (file.getName().endsWith(".fasta") || file.getName().endsWith(".fa")){
-					long sizeInMb = file.length() / (1024 * 1024);
-					
-					// Adicionando os nomes dos arquivos na lista para extracao em doAllExperiments
-					this.allFilesNames.add(file.getName());
-					System.out.println("* Indexando o arquivo "+file.getName());
-					this.dao.insertFastaInfo(file.getName(), sizeInMb, "Inserir comentario");
-					// Recuperando id do arquivo para inserir na tabela fasta_collect
-					int idFastaInfo = this.dao.getIDFastaInfo(file.getName());
-					System.out.println("* Inserindo o conteudo do arquivo no BD");
-					this.lineNumber = 0;
-					long startTime = System.currentTimeMillis();
-					this.readAndInsertFastaFile(file.getAbsolutePath(), idFastaInfo, srsSize);
-					long endTime = System.currentTimeMillis();
-					
-					// Atualizando o numero de linhas no arquivo
-					this.dao.updateNumOfLinesFastaInfo(file.getName(), this.lineNumber/2);
-					
-					// Calculando o tempo de insercao de cada arquivo
-					String timeExecutionSTR = this.calcTimeExecution(startTime, endTime);
-					this.bwMySQL.write(file.getName() + '\t' + "tempo: "+'\t'+timeExecutionSTR+'\n');
-					
-				}else {
-					System.out.println("*** Atenção "+file.getName()+ " não é um arquivo fasta");
+		this.createTxtFile("INSERT", srsSize);
+		this.prepareHeaderInsertTxtFile(fList, "INSERÇÃO");
+		
+		for (int i = 1; i <= numOfsample; i++) {
+			System.out.println("\n******** Amostra: "+i);
+			MySQLCreate.main(null);
+			for (File file : fList){
+				if (file.isFile()){
+					if (file.getName().endsWith(".fasta") || file.getName().endsWith(".fa")){
+						long sizeInMb = file.length() / (1024 * 1024);
+						System.out.println("\n* Indexando o arquivo "+file.getName());
+						this.dao.insertFastaInfo(file.getName(), sizeInMb, "Inserir comentario");
+						int idFastaInfo = this.dao.getIDFastaInfo(file.getName());
+						System.out.println("* Inserindo o conteudo do arquivo no BD");
+						this.lineNumber = 0;
+						long startTime = System.currentTimeMillis();
+						// Inserindo o conteudo no arquivo
+						this.insertFastaContent(file.getAbsolutePath(), idFastaInfo, srsSize);
+						long endTime = System.currentTimeMillis();
+						this.dao.updateNumOfLinesFastaInfo(file.getName(), lineNumber/2);
+	
+						String timeExecutionSTR = this.calcTimeExecution(startTime, endTime);
+						this.bwMySQL.write(timeExecutionSTR + '\t');
+						
+					}else {
+						System.out.println("*** Erro: "+file.getName()+ " não é um arquivo fasta");
+					}
 				}
 			}
+			this.bwMySQL.write("\n");
+			System.out.println("\n**** Total de linhas inseridas no Banco: "+this.allLines/2);
+			Thread.sleep(60000);
+			this.allLines = 0;
+			this.dao = new MySQLDAO();
 		}
 		
 		this.bwMySQL.close();
 		this.fwMySQL = null;
 		this.fileTxtMySQL = null;
 		
-		System.out.println("\n**** Fim da Inserção no MySQL.");
-		System.out.println("**** Total de linhas inseridas no Banco: "+this.allLines/2);
 	}
 	
+	/**
+	 * Extrai o conteudo do arquivo do BD e monta o arquivo .fa
+	 * @param numOfsamples numero de amostra
+	 * @param srsSize tamanho da SRS
+	 * @throws IOException
+	 * @throws InterruptedException
+	 * @throws SQLException 
+	 */
+	public void extractData(int numOfsamples, int srsSize) throws IOException, InterruptedException, SQLException {
+		List<String> allFastaFiles = this.dao.getAllFastaFile();
+		this.createTxtFile("EXTRACT", srsSize);
+		this.prepareHeaderExtractTxtFile(allFastaFiles, "EXTRAÇÃO");
+		
+		for (int i = 1; i <= numOfsamples; i++) {
+			System.out.println("*** Amostra: "+i);
+
+			for (int j = 0; j < allFastaFiles.size(); j++) {
+				System.out.println("\n* Extraindo o conteudo de "+allFastaFiles.get(j));
+				long startTime = System.currentTimeMillis();
+				this.dao.findByFilename(allFastaFiles.get(j), i, srsSize);
+				long endTime = System.currentTimeMillis();
+
+				String timeExecutionSTR = this.calcTimeExecution(startTime, endTime);
+				this.bwMySQL.write(timeExecutionSTR + '\t');
+				Thread.sleep(30000);
+			}
+			this.bwMySQL.write('\n');
+			Thread.sleep(60000);
+		}
+		
+		this.bwMySQL.close();
+		this.fwMySQL = null;
+		this.fileTxtMySQL = null;
+	}
+	
+	/**
+	 * Consulta pelo id de sequencia, no total são 30 ids consultados.
+	 * @throws IOException
+	 * @throws InterruptedException
+	 * @throws SQLException 
+	 */
+	public void findSeqByID() throws IOException, InterruptedException, SQLException {
+		List<String> allIDs = this.addAllIdSeqs();
+		this.createTxtFile("SEARCH", 0);
+		this.bwMySQL.write("****** CONSULTA MYSQL (segundos) ******\n");
+		for (int i = 0; i < allIDs.size(); i++) {
+			System.out.println("* Amostra ("+(i+1)+")");
+			long startTime = System.currentTimeMillis();
+			this.dao.findByID(allIDs.get(i));
+			long endTime = System.currentTimeMillis();
+			String timeExecutionSTR = this.calcTimeExecution(startTime, endTime);
+			this.bwMySQL.write(timeExecutionSTR + '\t' + allIDs.get(i)+'\n');
+			Thread.sleep(60000);
+		}
+		
+		this.bwMySQL.close();
+		this.fwMySQL = null;
+		this.fileTxtMySQL = null;
+	}
+	
+	/**
+	 * Cria o cabecalho do arquivo de acordo com o diretorio dos arquivos fasta
+	 * Experimento INSERCAO
+	 * @param fList
+	 * @throws IOException
+	 */
+	private void prepareHeaderInsertTxtFile(File[] fList, String experiment) throws IOException {
+		this.bwMySQL.write("****** "+experiment+" MYSQL (segundos) ******\n");
+		for (File file : fList){
+			if (file.isFile()){
+				if (file.getName().endsWith(".fasta") || file.getName().endsWith(".fa")){
+					this.bwMySQL.write(file.getName() + '\t');
+				}
+			}
+		}
+		this.bwMySQL.write("\n");
+	}
+	
+	/**
+	 * Cria o cabecalho do arquivo de acordo com a tabela fasta_info
+	 * Experimento Extracao
+	 * @param fList
+	 * @throws IOException
+	 */
+	private void prepareHeaderExtractTxtFile(List<String> allFastaFiles, String experiment) throws IOException {
+		this.bwMySQL.write("****** "+experiment+" MYSQL (segundos) ******\n");
+		for (int i = 0; i < allFastaFiles.size(); i++) {
+			this.bwMySQL.write(allFastaFiles.get(i) + '\t');
+			
+		}
+		this.bwMySQL.write("\n");
+	}
 	/**
 	 * Ler todos os Fasta de um repositorio especifico e realiza a consulta
 	 * cada vez que um arquivo é inserido. É usado para fazer a curva de consulta
@@ -186,10 +222,10 @@ public class FastaReaderToMySQL {
 					int idFastaInfo = this.dao.getIDFastaInfo(file.getName());
 					System.out.println("* Inserindo o conteudo do arquivo no BD");
 					this.lineNumber = 0;
-					this.readAndInsertFastaFile(file.getAbsolutePath(), idFastaInfo, srsSize);
+					this.insertFastaContent(file.getAbsolutePath(), idFastaInfo, srsSize);
 					
 					List<String> idSequences = new ArrayList<String>();
-					idSequences = this.addAllIdSeqs(idSequences);
+					idSequences = this.addAllIdSeqs();
 					Thread.sleep(10000); // Aguarda 10 segundos para realizar consulta
 					System.out.println("\n\n** Iniciando as Consultas");
 					// 5 -> Numero de amostra para o experimento
@@ -219,45 +255,49 @@ public class FastaReaderToMySQL {
 	}
 	
 	/**
-	 * Metodo que adiciona os ids que serao consultados
+	 * Metodo que adiciona os ids que serao consultados total de 30
 	 * @param allIDSeq
 	 * @return
 	 */
-	private List<String> addAllIdSeqs(List<String> allIDSeq){
-		// Consulta com 1 milhao
-		allIDSeq.add(">385_828_1910_F3"); // Arquivo a1milhao linha 1 500 505
-		allIDSeq.add(">375_1783_953_F3"); // Arquivo a1milhao linha 265341
-		allIDSeq.add(">932_31_598_F3"); // Nao existe no BD
-		allIDSeq.add(">374_1290_504_F3"); // Arquivo a1milhao linha 100 001
-		allIDSeq.add(">388_1856_792_F3"); // Arquivo a1milhao linha 1 999 999
+	private List<String> addAllIdSeqs(){
 		
-		// Consulta com 5milhoes
-		allIDSeq.add(">377_1306_66_F3"); // Arquivo b5milhoes linha 500 543
-		allIDSeq.add(">381_489_342_F3"); // Arquivo b5milhoes linha 965 441
-		allIDSeq.add(">1060_1173_984_F3"); // Nao existe no BD 
-		allIDSeq.add(">400_700_648_F3"); // Arquivo b5milhoes linha 3 456 777 
-		allIDSeq.add(">481_1416_1736_F3"); // Arquivo c10milhoes linha 1 112 223 
+		List<String> allIDSeq = new ArrayList<>();
 		
-		// Consulta com 10milhoes
-		allIDSeq.add(">476_1737_1136_F3"); // Arquivo c10milhoes linha 455 239
-		allIDSeq.add(">380_959_822_F3"); // Arquivo a1milhao linha 865 447
-		allIDSeq.add(">9999_999_9993"); // Nao existe no BD
-		allIDSeq.add(">473_1748_181_F3"); // Arquivo c10milhoes linha 44 441
-		allIDSeq.add(">373_56_358_F3"); // Arquivo a1milhao linha 23
+		allIDSeq.add(">385_828_1910_F3");
+		allIDSeq.add(">375_1783_953_F3");
+		allIDSeq.add(">932_31_598_F3");
+		allIDSeq.add(">374_1290_504_F3");
+		allIDSeq.add(">388_1856_792_F3");
+		
+		allIDSeq.add(">377_1306_66_F3");
+		allIDSeq.add(">381_489_342_F3");
+		allIDSeq.add(">1060_1173_984_F3");
+		allIDSeq.add(">400_700_648_F3");
+		allIDSeq.add(">481_1416_1736_F3");
+		
+		allIDSeq.add(">476_1737_1136_F3");
+		allIDSeq.add(">380_959_822_F3");
+		allIDSeq.add(">9999_999_9993");
+		allIDSeq.add(">473_1748_181_F3");
+		allIDSeq.add(">373_56_358_F3");
 
-		// Consulta com 15 milhoes
-		allIDSeq.add(">888888888"); // Nao existe
-		allIDSeq.add(">935_763_1226_F3"); // Arquivo d15 milhoes linha 666 667
-		allIDSeq.add(">380_968_305_F3"); // Arquivo b2milhoes linha 865 999
-		allIDSeq.add(">932_1711_642_F3"); // Arquivo d15 milhoes linha 99 999
-		allIDSeq.add(">473_1184_1067_F3"); // Arquivo c10milhoes linha 5431
+		allIDSeq.add(">888888888");
+		allIDSeq.add(">935_763_1226_F3");
+		allIDSeq.add(">380_968_305_F3");
+		allIDSeq.add(">932_1711_642_F3");
+		allIDSeq.add(">473_1184_1067_F3");
 		
-		// Consulta com 20 milhoes
-		allIDSeq.add(">1060_1174_4_F3"); // Arquivo e20milhoes 111
-		allIDSeq.add(">1078_594_607_F3"); // Arquivo e20milhoes 3 456 789
-		allIDSeq.add(">379_1585_361_F3"); // Arquivo a1milhao linha 777 777
-		allIDSeq.add(">373_246_244_F3"); // Arquivo b5milhoes 667
-		allIDSeq.add(">1065_919_326_F3"); // Arquivo e20milhoes 1 234 569
+		allIDSeq.add(">1060_1174_4_F3");
+		allIDSeq.add(">1078_594_607_F3");
+		allIDSeq.add(">379_1585_361_F3");
+		allIDSeq.add(">373_246_244_F3");
+		allIDSeq.add(">1065_919_326_F3");
+		
+		allIDSeq.add(">557_2036_1480_F3");
+		allIDSeq.add(">746_81_294_F3");
+		allIDSeq.add(">560_29_216_F3");
+		allIDSeq.add(">929_2036_1706_F3");
+		allIDSeq.add(">932_36_394_F3");
 		
 		return allIDSeq;
 	}
@@ -267,7 +307,7 @@ public class FastaReaderToMySQL {
 	 * @param fastaFile
 	 * @throws SQLException 
 	 */
-	public void readAndInsertFastaFile(String fastaFile, int idFastaInfo, int srsSize) throws SQLException{
+	public void insertFastaContent(String fastaFile, int idFastaInfo, int srsSize) throws SQLException{
 		BufferedReader br = null;
 		String line = "";
 		String fastaSplitBy = "\n";
@@ -321,10 +361,10 @@ public class FastaReaderToMySQL {
 	private String calcTimeExecution (long start, long end){
 		long totalTime = end - start;
 		NumberFormat formatter = new DecimalFormat("#0.00");
-		System.out.print("\n******** Tempo de execução: " 
+		System.out.print("* Tempo de execução: " 
 				+ formatter.format(totalTime / 1000d) + " segundos \n");
 		
-		String totalTimeSTR = formatter.format(totalTime / 1000d)+ " segundos";
+		String totalTimeSTR = formatter.format(totalTime / 1000d);
 		return totalTimeSTR;
 	}
 	
@@ -335,8 +375,8 @@ public class FastaReaderToMySQL {
 	 * @param timeExecution
 	 * @throws IOException 
 	 */
-	private void createTxtFile(String experiment, int numOfRepeat, int srsSize) throws IOException{
-		this.fileTxtMySQL = new File("mysql_"+experiment+"_"+numOfRepeat+"_SRS_"+srsSize+".txt");
+	private void createTxtFile(String experiment, int srsSize) throws IOException{
+		this.fileTxtMySQL = new File("mysql_"+experiment+"_SRS_"+srsSize+".txt");
 		this.fwMySQL = new FileWriter(this.fileTxtMySQL.getAbsoluteFile());
 		this.bwMySQL = new BufferedWriter(this.fwMySQL);
 		

@@ -5,6 +5,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import config.ConnectMySQL;
@@ -116,7 +118,13 @@ public class MySQLDAO{
 			System.out.println("Erro ao atualizar o numero de linhas :( \n"+e.getMessage());
 		}
 	}
-
+	
+	/**
+	 * Recupera o ID do arquivo fasta consultado pelo nome
+	 * @param fileName nome do arquivo
+	 * @return id
+	 * @throws SQLException
+	 */
 	public int getIDFastaInfo(String fileName) throws SQLException{
 		beforeExecuteQuery();
 
@@ -174,6 +182,26 @@ public class MySQLDAO{
 		return numOfLine;
 
 	}
+	
+	/**
+	 * Metodo retorna todos os arquivos armazenandos e indexados na tabela fasta_info
+	 * @return lista com o nome de todos os arquivos
+	 * @throws SQLException
+	 */
+	public List<String> getAllFastaFile() throws SQLException{
+		this.beforeExecuteQuery();
+		this.query = "SELECT * FROM fasta_info";
+		this.queryExec = this.conn.prepareStatement(this.query);
+		ResultSet results = this.queryExec.executeQuery();
+		List<String> allFastaFiles = new ArrayList<String>();
+		while (results.next()){
+			String fastaFile = results.getString("file_name");
+			allFastaFiles.add(fastaFile);
+		}
+		this.afterExecuteQuery();
+		return allFastaFiles;
+
+	}
 
 	/**
 	 * Retorna o conteudo de um arquivo especifico
@@ -189,7 +217,7 @@ public class MySQLDAO{
 		beforeExecuteQuery();
 		// recupera o numero total de linhas para ver se eh necessario fazer a extracao por partes
 		Integer numOfLine = this.getNumOfLinesFastaInfo(fileID);
-		System.out.println("*** Criando o arquivo: "+fileName);
+		System.out.println("* Criando o arquivo: "+fileName);
 		outputFasta.createFastaFile(repeat+fileName);
 		if (numOfLine <= 500000){
 			this.query = "SELECT TRIM(id_seq), TRIM(seq_dna) FROM fasta_collect WHERE fasta_info = ?;";
@@ -222,7 +250,7 @@ public class MySQLDAO{
 			}
 		}
 		if (numOfLine.equals(0)){
-			System.out.println("*** Conteúdo do arquivo não encontrado no Banco de dados :(");
+			System.out.println("* Conteúdo do arquivo não encontrado no Banco de dados :(");
 		}
 
 		outputFasta.closeFastaFile();
@@ -232,7 +260,12 @@ public class MySQLDAO{
 		System.out.println("**** Quantidade de registros: "+numOfLine);
 
 	}
-
+	
+	/**
+	 * Consulta pelo identificador de sequência
+	 * @param idSeqDNA
+	 * @throws SQLException
+	 */
 	public void findByID(String idSeqDNA) throws SQLException{
 		beforeExecuteQuery();	
 		this.query = "SELECT * FROM fasta_collect WHERE id_seq = ?";
@@ -248,7 +281,7 @@ public class MySQLDAO{
 			System.out.println("Linha: "+ results.getInt(4));
 			idSeqFound = true;
 		}
-		if (idSeqFound){
+		if (!idSeqFound){
 			System.out.println("*** ID "+idSeqDNA+" não encontrado no Banco de dados :(");
 		}
 		afterExecuteQuery();

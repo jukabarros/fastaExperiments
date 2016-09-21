@@ -7,8 +7,6 @@ import java.text.NumberFormat;
 import java.util.Properties;
 
 import config.ReadProperties;
-import create.MySQLCreate;
-import dao.MySQLDAO;
 import file.FastaReaderToCassandra;
 import file.FastaReaderToMongoDB;
 import file.FastaReaderToMySQL;
@@ -38,12 +36,8 @@ public class Application {
 			System.out.println("* Tamanho da SRS: "+srsSize);
 
 			String insertData = prop.getProperty("insert.data").toUpperCase();
-
-			String fileNameOutput = "";
-			String idSeqDNA = "";
-
 			String extractData = prop.getProperty("extract.data").toUpperCase();
-			String searchbyID = prop.getProperty("search.byid").toUpperCase();
+			String findByID = prop.getProperty("find.byid").toUpperCase();
 			
 			long startTime = System.currentTimeMillis();
 
@@ -57,7 +51,7 @@ public class Application {
 					System.out.println("****** EXTRAÇÃO CASSANDRA ******");
 					frToCassandra.extractData(numOfSamples, srsSize);
 				}
-				if (searchbyID.equals("YES")){
+				if (findByID.equals("YES")){
 					System.out.println("****** CONSULTA CASSANDRA ******");
 					frToCassandra.findSeqByID();
 				}
@@ -71,27 +65,23 @@ public class Application {
 					System.out.println("****** EXTRAÇÃO MONGODB ******");
 					frToMongodb.extractData(numOfSamples, srsSize);
 				}
-				if (searchbyID.equals("YES")){
+				if (findByID.equals("YES")){
 					System.out.println("****** CONSULTA MONGODB ******");
 					frToMongodb.findSeqByID();
 				}
 			}else if (db.equals("MYSQL")){
+				FastaReaderToMySQL frToMySQL = new FastaReaderToMySQL();
 				if(insertData.equals("YES")){
-					for (int i = 1; i <= numOfSamples; i++) {
-						MySQLCreate.main(null);
-						System.out.println("***************** Repetição: "+i);
-						FastaReaderToMySQL frToMySQL = new FastaReaderToMySQL();
-						frToMySQL.readFastaByDirectory(fastaDirectory, i, srsSize);
-					}
-				}else{
-					MySQLDAO dao = new MySQLDAO();
-					if (extractData.equals("YES")){
-						System.out.println("\n**** Extraindo o conteudo de "+fileNameOutput);
-						dao.findByFilename(fileNameOutput, 0, srsSize);
-					}else{
-						System.out.println("\n**** Consultando por id de sequencia: "+idSeqDNA);
-						dao.findByID(idSeqDNA);
-					}
+					System.out.println("****** INSERÇÃO MYSQL ******");
+					frToMySQL.readFastaDirectory(fastaDirectory, numOfSamples, srsSize);
+				}
+				if (extractData.equals("YES")){
+					System.out.println("****** EXTRAÇÃO MYSQL ******");
+					frToMySQL.extractData(numOfSamples, srsSize);
+				}
+				if (findByID.equals("YES")){
+					System.out.println("****** CONSULTA MYSQL ******");
+					frToMySQL.findSeqByID();
 				}
 
 			}  else{

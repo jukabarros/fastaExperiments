@@ -2,9 +2,11 @@ package config;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Properties;
 
 import com.mongodb.MongoClient;
+import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoDatabase;
 
 public class ConnectMongoDB {
@@ -26,11 +28,21 @@ public class ConnectMongoDB {
 	public MongoDatabase connectToMongoDB() throws IOException{
 		String host = this.prop.getProperty("mongodb.host");
 		int port = Integer.parseInt(this.prop.getProperty("mongodb.port"));
-		
 		this.mongo = new MongoClient(host, port);
         
 		MongoDatabase db = this.mongo.getDatabase(this.database);
-		System.out.println(db.getName());
+		
+		return db; 
+	}
+	
+	/*
+	 * Conecta com o Shard Mongo
+	 */
+	public MongoDatabase connectToMongoDBShard() throws IOException{
+		String host = this.prop.getProperty("mongodb.host");
+		int port = Integer.parseInt(this.prop.getProperty("mongodb.port"));
+		this.mongo = new MongoClient(Arrays.asList(new ServerAddress(host, port))); // Shard
+		MongoDatabase db = this.mongo.getDatabase(this.database);
 		
 		return db; 
 	}

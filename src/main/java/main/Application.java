@@ -30,7 +30,7 @@ public class Application {
 			int srsSize = Integer.parseInt(args[1]);
 
 			String db = prop.getProperty("database").toUpperCase();
-			int numOfSamples = Integer.parseInt(prop.getProperty("num.sample"));
+			int numOfSamples = Integer.parseInt(prop.getProperty("num.samples"));
 			
 			System.out.println("* Banco de Dados escolhido: "+db);
 			System.out.println("* Número de Amostras: "+numOfSamples);

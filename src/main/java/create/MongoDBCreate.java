@@ -1,18 +1,21 @@
 package create;
 
 import java.io.IOException;
-import java.util.Set;
+import java.util.Iterator;
 
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
+import org.bson.Document;
+
 import com.mongodb.MongoException;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.MongoIterable;
 
 import config.ConnectMongoDB;
 
 public class MongoDBCreate {
 	
 	private ConnectMongoDB conMongoDB;
-	private DB db;
+	private MongoDatabase db;
 	
 	public MongoDBCreate() throws IOException {
 		this.conMongoDB = new ConnectMongoDB();
@@ -23,17 +26,9 @@ public class MongoDBCreate {
 	 * Metodo pega  a collection desejada
 	 * caso nao exista, ela cria uma nova
 	 */
-	public DBCollection getCollection(String collection) throws IOException{
-		DBCollection coll = this.db.getCollection(collection);
+	public MongoCollection<Document> getCollection(String collection) throws IOException{
+		MongoCollection<Document> coll = this.db.getCollection(collection);
 		return coll;
-	}
-	
-	/*
-	 * Lista todas as coleções
-	 */
-	public Set<String> listAllColection() throws IOException{
-		Set<String> allCollections = this.db.getCollectionNames();
-		return allCollections;
 	}
 	
 	/*
@@ -41,28 +36,26 @@ public class MongoDBCreate {
 	 */
 	public void dropCollection(String collection) throws IOException{
 		System.out.println("Limpando collection "+collection);
-		DBCollection coll = this.db.getCollection(collection);
+		MongoCollection<Document> coll = this.db.getCollection(collection);
 		coll.drop();
 	}
 	
 	public static void main(String[] args) throws IOException {
 		try {
-			System.out.println("**** CRIANDO AMBIENTE DO MONGODB ****");
-			System.out.println("Excluindo o Banco de Dados");
-			ConnectMongoDB mongoCon = new ConnectMongoDB();
-			mongoCon.dropDatabase();
-			
-			System.out.println("Criando o Banco de Dados");
 			MongoDBCreate mongodbCreate = new MongoDBCreate();
+			System.out.println("**** CRIANDO AMBIENTE DO MONGODB ****");
 			
-			Set<String> allCollections = mongodbCreate.listAllColection();
-			String[] listAllCollections = allCollections.toArray(new String [allCollections.size()]);
-			for (int i = 0; i < listAllCollections.length; i++) {
-				String collection = listAllCollections[i];
-				mongodbCreate.dropCollection(collection);
+			MongoIterable<String> allCollections = mongodbCreate.db.listCollectionNames();
+			Iterator<String> it = allCollections.iterator();
+			
+			System.out.println("* Limpando as Coleções");
+			while (it.hasNext()) {
+				mongodbCreate.dropCollection(it.next());
 			}
-			System.out.println("Criando a collection fasta_info");
+
+			System.out.println("* Criando a collection fasta_info");
 			mongodbCreate.getCollection("fasta_info");
+			
 			System.out.println("OK");
 			
 		}  catch (MongoException e) {

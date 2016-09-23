@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.Properties;
 
-import com.mongodb.DB;
 import com.mongodb.MongoClient;
+import com.mongodb.client.MongoDatabase;
 
 public class ConnectMongoDB {
 
@@ -23,13 +23,14 @@ public class ConnectMongoDB {
 	/*
 	 * Conecta com o Mongo
 	 */
-	public DB connectToMongoDB() throws IOException{
+	public MongoDatabase connectToMongoDB() throws IOException{
 		String host = this.prop.getProperty("mongodb.host");
 		int port = Integer.parseInt(this.prop.getProperty("mongodb.port"));
 		
 		this.mongo = new MongoClient(host, port);
-		
-		DB db = this.mongo.getDB(this.database);
+        
+		MongoDatabase db = this.mongo.getDatabase(this.database);
+		System.out.println(db.getName());
 		
 		return db; 
 	}
@@ -42,7 +43,7 @@ public class ConnectMongoDB {
 		int port = Integer.parseInt(this.prop.getProperty("mongodb.port"));
 		
 		this.mongo = new MongoClient(host, port);
-		this.mongo.getDB(this.database);
+		this.mongo.getDatabase(this.database);
 		
 		this.mongo.dropDatabase(this.database);
 	}

@@ -14,8 +14,8 @@ import file.FastaReaderToMySQL;
 public class Application {
 
 	/*
-	 * Argumentos Opcionais:
-	 * 0 - Arquivo ou Diretorio do fasta
+	 * Argumentos:
+	 * 0 - Diretorio dos arquivos fasta
 	 * 1 - Tamanho da SRS
 	 */
 	public static void main(String[] args) throws IOException, SQLException, InterruptedException {
@@ -99,7 +99,7 @@ public class Application {
 	public long calcTimeExecution (long start, long end){
 		long totalTime = end - start;
 		NumberFormat formatter = new DecimalFormat("#0.00");
-		System.out.print("\n*** Tempo TOTAL de execução: " 
+		System.out.print("\n****** Tempo TOTAL de execução: " 
 				+ formatter.format(totalTime / 1000d) + " segundos ******\n");
 
 		return totalTime;

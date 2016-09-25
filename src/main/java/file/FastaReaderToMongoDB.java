@@ -26,7 +26,7 @@ public class FastaReaderToMongoDB {
 	private int lineNumber;
 
 	/* Sao usadas para criar o arquivo txt indicando
-	 * o tempo de insercao de cada arquivo
+	 * os tempos de cada experimento
 	 */
 	private File fileTxtMongoDB;
 	private FileWriter fwMongoDB;
@@ -53,7 +53,6 @@ public class FastaReaderToMongoDB {
 	 */
 	public void readFastaDirectory(String fastaFilePath, int numOfsample, int srsSize) throws SQLException, IOException, InterruptedException{
 		File directory = new File(fastaFilePath);
-		//get all the files from a directory
 		File[] fList = directory.listFiles();
 		// Ordernando a lista por ordem alfabetica
 		Arrays.sort(fList);
@@ -339,6 +338,7 @@ public class FastaReaderToMongoDB {
 					}
 				}
 			}
+			this.dao.insertLastData();
 
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();

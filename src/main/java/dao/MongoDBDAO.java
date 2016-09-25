@@ -16,10 +16,13 @@ public class MongoDBDAO {
 
 	private MongoDBCreate mongoDBCreate;
 	private MongoCollection<Document> dbCollection;
+	
+	private List<Document> documents;
 
 	public MongoDBDAO() throws IOException {
 		super();
 		this.mongoDBCreate = new MongoDBCreate();
+		this.documents = new ArrayList<Document>();
 	}
 
 	/*
@@ -46,14 +49,23 @@ public class MongoDBDAO {
 
 	public void insertData(String idSeq, String seqDna, int line) throws IOException{
 		/**** Insert ****/
-		// create a document to store key and value
 		Document document = new Document();
 		document.put("idSeq", idSeq);
 		document.put("seqDna", seqDna);
 		document.put("line", line);
-		this.dbCollection.insertOne(document);
+		this.documents.add(document);
+		if (this.documents.size() >= 1000) {
+			this.dbCollection.insertMany(documents);
+			this.documents.clear();
+		}
 	}
-
+	
+	public void insertLastData() {
+		if (this.documents.size() > 0) {
+			this.dbCollection.insertMany(documents);
+			this.documents = new ArrayList<Document>();
+		}
+	}
 	/**
 	 * Atualiza o numero de linhas de um arquivo na colecao fasta_info
 	 * @param fileName

@@ -9,7 +9,7 @@ import config.ConnectCassandra;
 import config.ReadProperties;
 
 
-/*
+/**
  * Cria um keyspace com uma tabela que possui uma unica
  * coluna que vai ser inserida o ID com a sequencia
  */
@@ -67,7 +67,7 @@ public class CassandraCreate {
 		this.connCassandra.close();
 	}
 	
-	/*
+	/**
 	 * Tabela que recebe o mesmo nome do arquivo onde troca o .fa para -_fa
 	 * pois o cassandra nao permite tabela com o "."
 	 */

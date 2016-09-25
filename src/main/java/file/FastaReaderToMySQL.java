@@ -52,9 +52,7 @@ public class FastaReaderToMySQL {
 	 */
 	public void readFastaDirectory(String fastaFilePath, int numOfsample, int srsSize) throws SQLException, IOException, InterruptedException{
 		File directory = new File(fastaFilePath);
-		//get all the files from a directory
 		File[] fList = directory.listFiles();
-		// Ordernando a lista por ordem alfabetica
 		Arrays.sort(fList);
 		// Criando o arquivo txt referente ao tempo de insercao no bd
 		this.createTxtFile("INSERT", srsSize);

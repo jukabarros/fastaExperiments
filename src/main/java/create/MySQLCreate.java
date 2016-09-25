@@ -102,13 +102,11 @@ public class MySQLCreate {
 		MySQLCreate mc = new MySQLCreate();
 		System.out.println("**** CRIANDO AMBIENTE DO MYSQL ****");
 		mc.dropDatabase();
-		System.out.println("OK");
 		mc.createDatabase();
-		System.out.println("OK");
 		mc.createTables();
-		System.out.println("OK");
 		mc.truncateTables();
-		System.out.println("OK");
+		
+		System.out.println("\nOK");
 	}
 
 }

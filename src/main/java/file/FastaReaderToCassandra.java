@@ -49,7 +49,6 @@ public class FastaReaderToCassandra {
 	 */
 	public void readFastaDirectory(String fastaFilePath, int numOfsample, int srsSize) throws SQLException, IOException, InterruptedException{
 		File directory = new File(fastaFilePath);
-		//get all the files from a directory
 		File[] fList = directory.listFiles();
 		// Ordernando a lista por ordem alfabetica
 		Arrays.sort(fList);
@@ -111,7 +110,7 @@ public class FastaReaderToCassandra {
 			System.out.println("*** Amostra: "+i);
 
 			for (int j = 0; j < allFastaFiles.size(); j++) {
-				System.out.println("\n*** Extraindo o conteudo de "+allFastaFiles.get(j));
+				System.out.println("\n* Extraindo o conteudo de "+allFastaFiles.get(j));
 				long startTime = System.currentTimeMillis();
 				this.dao.findByFileName(allFastaFiles.get(j), i, srsSize);
 				long endTime = System.currentTimeMillis();
@@ -197,7 +196,6 @@ public class FastaReaderToCassandra {
 	public void readFastaDirectoryAndSearch(String fastaFilePath, int repeat, int srsSize) throws SQLException, IOException, InterruptedException{
 		File directory = new File(fastaFilePath);
 		File[] fList = directory.listFiles();
-		// Ordernando a lista por ordem alfabetica
 		Arrays.sort(fList);
 		int paramConsult = 0;
 		for (File file : fList){

@@ -55,16 +55,16 @@ public class MongoDBDAO {
 		document.put("line", line);
 		this.documents.add(document);
 		if (this.documents.size() >= 1000) {
-			this.dbCollection.insertMany(documents);
+			this.dbCollection.insertMany(this.documents);
 			this.documents.clear();
 		}
 	}
 	
 	public void insertLastData() {
 		if (this.documents.size() > 0) {
-			this.dbCollection.insertMany(documents);
-			this.documents = new ArrayList<Document>();
+			this.dbCollection.insertMany(this.documents);
 		}
+		this.documents = new ArrayList<Document>();
 	}
 	/**
 	 * Atualiza o numero de linhas de um arquivo na colecao fasta_info

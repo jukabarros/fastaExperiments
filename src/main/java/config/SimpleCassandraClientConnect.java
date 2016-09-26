@@ -25,6 +25,7 @@ public class SimpleCassandraClientConnect {
 	public void close() {
 		cluster.close();
 	}
+	
 	public static void main(String[] args) {
 		SimpleCassandraClientConnect scc = new SimpleCassandraClientConnect();
 		scc.connect("150.161.11.134");

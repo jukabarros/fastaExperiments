@@ -50,6 +50,7 @@ public class CassandraDAO {
 		if (this.batch.size() > 0) {
 			this.session.execute(batch);
 		}
+		this.batch = new BatchStatement(); 
 		this.connCassandra.close();
 	}
 	
@@ -108,9 +109,9 @@ public class CassandraDAO {
 	public void insertData(String idSeq, String seqDna, int line){
 		try{
 			this.batch.add(this.statement.bind(idSeq, seqDna, line));
-			if (this.batch.size() >= 50000){
+			if (this.batch.size() >= 1000){
 				this.session.execute(this.batch);
-				this.batch = new BatchStatement();
+				this.batch.clear();
 			}
 		}catch (Exception e){
 			System.out.println("Erro ao executar a query: :("+e.getMessage());

@@ -18,8 +18,9 @@ import create.CassandraCreate;
 import dao.CassandraDAO;
 
 public class FastaReaderToCassandra {
-	
-	private int allLines;
+
+	// Numero total de SRSs inseridas no BD
+	private int totalOfSRS;
 	private CassandraDAO dao;
 	
 	// Numero da linha de um arquivo especifico
@@ -31,7 +32,7 @@ public class FastaReaderToCassandra {
 
 	public FastaReaderToCassandra() throws IOException {
 		super();
-		this.allLines = 0;
+		this.totalOfSRS = 0;
 		this.dao = new CassandraDAO();
 		
 		this.fileTxtCassandra = null;
@@ -82,9 +83,16 @@ public class FastaReaderToCassandra {
 				}
 			}
 			this.bwCassandra.write("\n");
-			System.out.println("\n**** Total de linhas inseridas no Banco: "+this.allLines/2);
+			
+			int totalLinesinBD = this.totalOfSRS/srsSize;
+			// Restante das SRSs dos arquivos
+			if (this.totalOfSRS%srsSize != 0) {
+				totalLinesinBD++;
+			}
+			
+			System.out.println("\n**** Total de linhas inseridas no Banco: "+totalLinesinBD);
 			Thread.sleep(60000);
-			this.allLines = 0;
+			this.totalOfSRS = 0;
 			this.dao = new CassandraDAO();
 		}
 		
@@ -311,13 +319,13 @@ public class FastaReaderToCassandra {
 			int allSrsSize = srsSize*2;
 			while ((line = br.readLine()) != null) {
 				numOfLine++;
-				this.allLines++;
 				this.lineNumber++;
 				String[] brokenFasta = line.split(fastaSplitBy);
 				if (numOfLine%2 == 1){
 					idSeq += brokenFasta[0];
 				}else if (numOfLine > 1){
 					seqDNA += brokenFasta[0];
+					this.totalOfSRS++;
 				}
 				if (numOfLine%allSrsSize == 0){
 					this.dao.insertData(idSeq, seqDNA, this.lineNumber/2);
@@ -329,10 +337,14 @@ public class FastaReaderToCassandra {
 					}
 				}
 			}
-			if (srsSize != 2) {
+			
+			int srsFile = this.lineNumber/2;
+			// Verificando se existe SRS no final do arquivo
+			if (srsFile%srsSize != 0) {
 				// Inserindo ultimos registro para SRS agrupadas 
 				this.dao.insertData(idSeq, seqDNA, this.lineNumber/2);
 			}
+			
 			this.dao.afterExecuteQuery();
 	 
 		} catch (FileNotFoundException e) {

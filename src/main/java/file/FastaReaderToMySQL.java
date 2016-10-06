@@ -19,8 +19,8 @@ import dao.MySQLDAO;
 
 public class FastaReaderToMySQL {
 	
-	// Ler todas as linhas (Soma com as linhas de outros arquivos)
-	public int allLines;
+	// Numero total de SRSs inseridas no BD
+	public int totalOfSRS;
 	// Numero da linha de um arquivo especifico
 	private int lineNumber;
 	
@@ -33,7 +33,7 @@ public class FastaReaderToMySQL {
 	
 	public FastaReaderToMySQL() throws IOException {
 		super();
-		this.allLines = 0;
+		this.totalOfSRS = 0;
 		this.lineNumber = 0;
 		this.dao = new MySQLDAO();
 		
@@ -85,9 +85,17 @@ public class FastaReaderToMySQL {
 				}
 			}
 			this.bwMySQL.write("\n");
-			System.out.println("\n**** Total de linhas inseridas no Banco: "+this.allLines/2);
+			
+			int totalLinesinBD = this.totalOfSRS/srsSize;
+			
+			// Restante das SRSs dos arquivos
+			if (this.totalOfSRS%srsSize != 0) {
+				totalLinesinBD++;
+			}
+			
+			System.out.println("\n**** Total de linhas inseridas no Banco: "+ totalLinesinBD);
 			Thread.sleep(60000);
-			this.allLines = 0;
+			this.totalOfSRS = 0;
 			this.dao = new MySQLDAO();
 		}
 		
@@ -320,13 +328,13 @@ public class FastaReaderToMySQL {
 			this.dao.prepareInsertFastaCollect();
 			while ((line = br.readLine()) != null) {
 				numOfLine++;
-				this.allLines++;
 				this.lineNumber++;
 				String[] brokenFasta = line.split(fastaSplitBy);
 				if (numOfLine%2 == 1){
 					idSeq += brokenFasta[0];
 				}else if (numOfLine > 1){
 					seqDNA += brokenFasta[0];
+					this.totalOfSRS++;
 				}
 				if (numOfLine%allSrsSize == 0){
 					this.dao.insertFastaCollect(idSeq, seqDNA, this.lineNumber/2, idFastaInfo);
@@ -338,10 +346,13 @@ public class FastaReaderToMySQL {
 					}
 				}
 			}
-			if (srsSize != 2) {
+			int srsFile = this.lineNumber/2;
+			// Verificando se existe SRS no final do arquivo
+			if (srsFile%srsSize != 0) {
 				// Inserindo ultimos registro para SRS agrupadas 
 				this.dao.insertFastaCollect(idSeq, seqDNA, this.lineNumber/2, idFastaInfo);
 			}
+			
 			this.dao.afterExecuteQuery();
 	 
 		} catch (FileNotFoundException e) {

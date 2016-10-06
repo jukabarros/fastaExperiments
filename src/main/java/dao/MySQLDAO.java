@@ -91,7 +91,7 @@ public class MySQLDAO{
 			this.queryExec.setInt(4, fastaInfo);
 			this.queryExec.addBatch();
 			this.insertAll++;
-			if (this.insertAll%500000==0){
+			if (this.insertAll%1000==0){
 				this.queryExec.executeBatch();
 				this.conn.commit();
 				this.queryExec.clearBatch();

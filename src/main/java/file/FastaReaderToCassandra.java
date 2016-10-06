@@ -329,6 +329,10 @@ public class FastaReaderToCassandra {
 					}
 				}
 			}
+			if (srsSize != 2) {
+				// Inserindo ultimos registro para SRS agrupadas 
+				this.dao.insertData(idSeq, seqDNA, this.lineNumber/2);
+			}
 			this.dao.afterExecuteQuery();
 	 
 		} catch (FileNotFoundException e) {

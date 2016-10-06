@@ -338,7 +338,10 @@ public class FastaReaderToMySQL {
 					}
 				}
 			}
-			
+			if (srsSize != 2) {
+				// Inserindo ultimos registro para SRS agrupadas 
+				this.dao.insertFastaCollect(idSeq, seqDNA, this.lineNumber/2, idFastaInfo);
+			}
 			this.dao.afterExecuteQuery();
 	 
 		} catch (FileNotFoundException e) {

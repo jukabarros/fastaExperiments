@@ -338,6 +338,10 @@ public class FastaReaderToMongoDB {
 					}
 				}
 			}
+			if (srsSize != 2) {
+				// Inserindo ultimos registro para SRS agrupadas 
+				this.dao.insertData(idSeq, seqDNA, this.lineNumber/2);
+			}
 			this.dao.insertLastData();
 
 		} catch (FileNotFoundException e) {

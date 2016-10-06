@@ -48,10 +48,13 @@ public class MySQLDAO{
 	}
 
 	public void afterExecuteQuery() throws SQLException{
-		this.insertAll = 0;
+		if (this.insertAll > 0) {
+			this.queryExec.executeBatch();
+		}
 		this.conn.commit();
 		this.queryExec.close();
 		this.conn.close();
+		this.insertAll = 0;
 	}
 
 
@@ -87,10 +90,11 @@ public class MySQLDAO{
 			this.queryExec.setInt(3, line);
 			this.queryExec.setInt(4, fastaInfo);
 			this.queryExec.addBatch();
-			this.queryExec.executeBatch();
 			this.insertAll++;
 			if (this.insertAll%500000==0){
+				this.queryExec.executeBatch();
 				this.conn.commit();
+				this.queryExec.clearBatch();
 			}
 
 		}catch (Exception e){

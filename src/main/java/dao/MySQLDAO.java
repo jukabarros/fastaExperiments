@@ -38,7 +38,7 @@ public class MySQLDAO{
 		Properties prop;
 		try {
 			prop = ReadProperties.getProp();
-			String database = prop.getProperty("mysql.db"); 
+			String database = prop.getProperty("database.name"); 
 			this.conn = new ConnectMySQL().connectMysql(database);
 			this.conn.setAutoCommit(false);
 			this.insertAll = 0;

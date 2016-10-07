@@ -21,7 +21,7 @@ public class ReadProperties {
         
         String host = prop.getProperty("mysql.host");
         String password = prop.getProperty("mysql.password");
-        String db = prop.getProperty("mysql.db");
+        String db = prop.getProperty("database.name");
          
         System.out.println("Login = " + db);
         System.out.println("Host = " + host);

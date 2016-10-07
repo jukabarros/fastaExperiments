@@ -43,14 +43,12 @@ public class OutputFasta {
 	public void writeFastaFile(String id, String seqDNA, int srsSize){
 		try {
 			if (srsSize > 1){
-				String[] brokenStr = id.split(">");
-				int breakSeq = 0;
-				int seqDNAlength = seqDNA.length()/srsSize;
+				// os elementos '0' sempre vem vazio
+				String[] brokenStrID = id.split(">");
+				String[] brokenStrSeqDNA = seqDNA.split("-");
 
-				for (int i = 1; i <= srsSize; i++) {
-					CharSequence uniqueSequenceDNA = seqDNA.subSequence(breakSeq, breakSeq+seqDNAlength);
-					this.fw.write(">"+brokenStr[i]+'\n'+uniqueSequenceDNA+'\n');
-					breakSeq += seqDNAlength;
+				for (int i = 1; i < brokenStrID.length; i++) {
+					this.fw.write(">"+brokenStrID[i]+'\n'+brokenStrSeqDNA[i]+'\n');
 				}
 				
 			}else {

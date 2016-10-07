@@ -34,7 +34,7 @@ public class CassandraDAO {
 		this.session = null;
 		this.query = null;
 		Properties prop = ReadProperties.getProp();
-		this.keyspace =  prop.getProperty("cassandra.keyspace");
+		this.keyspace =  prop.getProperty("database.name");
 		this.cassandraCreate = new CassandraCreate();
 		this.statement = null;
 		this.batch = new BatchStatement();

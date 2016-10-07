@@ -29,7 +29,7 @@ public class CassandraCreate {
 		this.connCassandra = new ConnectCassandra();
 		this.session = null;
 		this.query = null;
-		this.keyspace =  prop.getProperty("cassandra.keyspace");
+		this.keyspace =  prop.getProperty("database.name");
 		this.replicationFactor = prop.getProperty("cassandra.replication.factor");
 		
 	}

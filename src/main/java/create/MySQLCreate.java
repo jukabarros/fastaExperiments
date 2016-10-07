@@ -17,7 +17,7 @@ public class MySQLCreate {
 	public MySQLCreate() throws IOException {
 		this.query = null;
 		Properties prop = ReadProperties.getProp();
-		this.database = prop.getProperty("mysql.db"); 
+		this.database = prop.getProperty("database.name"); 
 	}
 
 	public void createDatabase() throws SQLException{

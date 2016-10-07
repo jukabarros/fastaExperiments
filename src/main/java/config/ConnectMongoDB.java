@@ -19,7 +19,7 @@ public class ConnectMongoDB {
 		super();
 		this.mongo = null;
 		this.prop = ReadProperties.getProp();
-		this.database = prop.getProperty("mongodb.db");
+		this.database = prop.getProperty("database.name");
 	}
 	
 	/*

@@ -308,7 +308,10 @@ public class FastaReaderToCassandra {
 	public void insertFastaContent(String fastaFile, String fastaFileName, int srsSize) throws IOException{
 		BufferedReader br = null;
 		String line = "";
-		String fastaSplitBy = "\n";
+		String fastaSplitBy = "\n";String separatorSeqDNA = "";
+		if (srsSize != 1) {
+			separatorSeqDNA = "-";
+		}
 		int numOfLine = 0;
 		try {
 			br = new BufferedReader(new FileReader(fastaFile));
@@ -324,7 +327,7 @@ public class FastaReaderToCassandra {
 				if (numOfLine%2 == 1){
 					idSeq += brokenFasta[0];
 				}else if (numOfLine > 1){
-					seqDNA += brokenFasta[0];
+					seqDNA += separatorSeqDNA+brokenFasta[0];
 					this.totalOfSRS++;
 				}
 				if (numOfLine%allSrsSize == 0){
